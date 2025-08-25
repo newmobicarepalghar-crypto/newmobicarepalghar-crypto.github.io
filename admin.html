@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mobicare Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f4f4; padding:20px; }
+    .login, .panel { max-width:400px; margin:auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 8px #aaa; }
+    h2 { text-align:center; }
+    input, button, select { padding:8px; margin:5px 0; width:100%; font-size:16px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td { border:1px solid #ccc; padding:5px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="login" id="loginBox">
+    <h2>Admin Login</h2>
+    <input type="password" id="adminPass" placeholder="Enter Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div class="panel" id="adminPanel" style="display:none;">
+    <h2>Prize Settings</h2>
+
+    <table>
+      <tr><th>Prize</th><th>Quantity</th></tr>
+      <tbody id="prizeTable"></tbody>
+    </table>
+
+    <label for="forcePrize">Force Prize for Next Spin (Optional)</label>
+    <select id="forcePrize"></select>
+
+    <button onclick="saveSettings()">Save Settings</button>
+    <p id="msg" style="color:green;"></p>
+  </div>
+
+  <script>
+    const adminPassword = "Mobicare#12";
+
+    let prizes = [
+      { name: "Water Bottle", qty: 200 },
+      { name: "Backpack", qty: 100 },
+      { name: "Duffel Bag", qty: 60 },
+      { name: "Tiffin Box", qty: 100 },
+      { name: "Sling Bag", qty: 100 },
+      { name: "Try Again", qty: 9999 }
+    ];
+
+    function login(){
+      let pass = document.getElementById("adminPass").value;
+      if(pass === adminPassword){
+        document.getElementById("loginBox").style.display="none";
+        document.getElementById("adminPanel").style.display="block";
+        loadTable();
+        loadForcePrize();
+      } else {
+        alert("Wrong Password!");
+      }
+    }
+
+    function loadTable(){
+      let tbody = document.getElementById("prizeTable");
+      tbody.innerHTML="";
+      prizes.forEach((p,i)=>{
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.name}</td>
+            <td><input type="number" min="0" value="${p.qty}" onchange="prizes[${i}].qty=this.value"></td>
+          </tr>`;
+      });
+    }
+
+    function loadForcePrize(){
+      let select = document.getElementById("forcePrize");
+      select.innerHTML="";
+      prizes.forEach(p=>{
+        select.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+      });
+    }
+
+    function saveSettings(){
+      localStorage.setItem("mobicarePrizes", JSON.stringify(prizes));
+      let forced = document.getElementById("forcePrize").value;
+      localStorage.setItem("adminPrize", forced);
+      document.getElementById("msg").innerText = "Settings Saved!";
+    }
+  </script>
+</body>
+</html>

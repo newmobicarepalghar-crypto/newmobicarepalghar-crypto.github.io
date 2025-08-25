@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mobicare Lucky Wheel</title>
+  <style>
+    body { text-align:center; font-family:Arial; background:#f9f9f9; }
+    #wheel { border:10px solid #333; border-radius:50%; margin:auto; display:block; }
+    #arrow {
+      width:0; height:0;
+      border-left:20px solid transparent;
+      border-right:20px solid transparent;
+      border-bottom:40px solid red;
+      position:absolute;
+      top:20px; left:50%;
+      transform:translateX(-50%);
+      z-index:10;
+    }
+    button { margin-top:20px; padding:10px 20px; font-size:16px; }
+  </style>
+</head>
+<body>
+  <h2>Spin & Win</h2>
+  <div id="arrow"></div>
+  <canvas id="wheel" width="400" height="400"></canvas>
+  <br>
+  <button onclick="spinWheel()" id="spinBtn">SPIN</button>
+
+  <script>
+    let canvas = document.getElementById("wheel");
+    let ctx = canvas.getContext("2d");
+    let spinAngle = 0;
+    let spinning = false;
+    let adminPrize = localStorage.getItem("adminPrize") || null;
+
+    let prizes = JSON.parse(localStorage.getItem("mobicarePrizes")) || [
+      {name:"Water Bottle", qty:200},
+      {name:"Backpack", qty:100},
+      {name:"Duffel Bag", qty:60},
+      {name:"Tiffin Box", qty:100},
+      {name:"Sling Bag", qty:100},
+      {name:"Try Again", qty:9999}
+    ];
+
+    let colors = ["#ff9999","#99ff99","#9999ff","#ffcc99","#66cccc","#ffccff"];
+
+    function drawWheel(){
+      ctx.clearRect(0,0,400,400);
+      let arc = 2*Math.PI/prizes.length;
+      prizes.forEach((p,i)=>{
+        let angle = i*arc + spinAngle;
+        ctx.beginPath();
+        ctx.fillStyle = colors[i%colors.length];
+        ctx.moveTo(200,200);
+        ctx.arc(200,200,200,angle,angle+arc);
+        ctx.lineTo(200,200);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(200,200);
+        ctx.rotate(angle + arc/2);
+        ctx.textAlign="right";
+        ctx.fillStyle="#000";
+        ctx.font="16px Arial";
+        ctx.fillText(p.name,180,5);
+        ctx.restore();
+      });
+    }
+
+    function spinWheel(){
+      if(spinning) return;
+      spinning=true;
+      let arc = 2*Math.PI/prizes.length;
+
+      // Select prize
+      let winner;
+      if(adminPrize){
+        winner = prizes.find(p=>p.name===adminPrize);
+      } else {
+        winner = prizes[Math.floor(Math.random()*prizes.length)];
+      }
+
+      // If qty 0 and not Try Again, set winner=Try Again
+      if(winner.qty<=0 && winner.name!=="Try Again"){
+        winner = prizes.find(p=>p.name==="Try Again");
+      }
+
+      let winnerIndex = prizes.findIndex(p=>p.name===winner.name);
+      let targetAngle = (prizes.length - winnerIndex)*arc - arc/2;
+      let finalAngle = 5*2*Math.PI + targetAngle;
+      let duration=4000;
+      let start=null;
+
+      function animate(timestamp){
+        if(!start) start=timestamp;
+        let progress=(timestamp-start)/duration;
+        if(progress<1){
+          spinAngle = finalAngle*easeOut(progress);
+          drawWheel();
+          requestAnimationFrame(animate);
+        } else {
+          spinning=false;
+          spinAngle=finalAngle%(2*Math.PI);
+          drawWheel();
+          alert("You won: "+winner.name);
+          if(winner.name!=="Try Again" && winner.qty>0) winner.qty--;
+          localStorage.setItem("mobicarePrizes",JSON.stringify(prizes));
+          document.getElementById("spinBtn").disabled=true;
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function easeOut(t){ return 1-Math.pow(1-t,3); }
+
+    drawWheel();
+  </script>
+</body>
+</html>
