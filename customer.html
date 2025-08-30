@@ -67,12 +67,14 @@
       });
     }
 
+    drawWheel();
+
     function spinWheel(){
       if(spinning) return;
       spinning=true;
       let arc = 2*Math.PI/prizes.length;
 
-      // Select prize
+      // Winner select
       let winner;
       if(adminPrize){
         winner = prizes.find(p=>p.name===adminPrize);
@@ -80,43 +82,44 @@
         winner = prizes[Math.floor(Math.random()*prizes.length)];
       }
 
-      // If qty 0 and not Try Again, set winner=Try Again
       if(winner.qty<=0 && winner.name!=="Try Again"){
         winner = prizes.find(p=>p.name==="Try Again");
       }
 
       let winnerIndex = prizes.findIndex(p=>p.name===winner.name);
 
-      // Arrow is at top (0 rad = upward), so we need winner's arc center opposite
-      let arcCenter = (winnerIndex * arc) + arc/2;
+      // Target angle (arrow is at top = Math.PI/2)
+      let targetAngle = (3*Math.PI/2) - (winnerIndex*arc + arc/2);
 
-      // Random full spins + correct stop angle
-      let spins = 5; // number of full rotations
-      let finalAngle = (2*Math.PI*spins) - arcCenter;
+      // Add multiple full spins for animation
+      let spins = 5; // number of extra spins
+      let finalAngle = targetAngle + (2*Math.PI*spins);
 
-      let duration = 6000; // spin time in ms
       let start = null;
-
       function animate(timestamp){
-        if(!start) start=timestamp;
-        let progress = (timestamp-start)/duration;
-        if(progress>=1){
-          spinAngle = finalAngle % (2*Math.PI);
-          drawWheel();
+        if(!start) start = timestamp;
+        let progress = (timestamp - start) / 5000; // 5 sec spin
+        if(progress > 1) progress = 1;
+
+        // easeOut
+        let ease = 1 - Math.pow(1-progress,3);
+        spinAngle = finalAngle * ease;
+        drawWheel();
+
+        if(progress < 1){
+          requestAnimationFrame(animate);
+        } else {
           spinning=false;
           alert("🎉 Winner: " + winner.name);
-          return;
+          // reduce qty if not Try Again
+          if(winner.name!=="Try Again"){
+            winner.qty--;
+            localStorage.setItem("mobicarePrizes",JSON.stringify(prizes));
+          }
         }
-        let eased = 1 - Math.pow(1-progress,3); // easeOut
-        spinAngle = eased * finalAngle;
-        drawWheel();
-        requestAnimationFrame(animate);
       }
-
       requestAnimationFrame(animate);
     }
-
-    drawWheel();
   </script>
 </body>
 </html>
