@@ -86,37 +86,7 @@
       }
 
       let winnerIndex = prizes.findIndex(p=>p.name===winner.name);
-      let targetAngle = winnerIndex * arc + arc / 2;
-targetAngle = 2 * Math.PI - targetAngle;
-      let finalAngle = 5*2*Math.PI + targetAngle;
-      let duration=8000;
-      let start=null;
 
-      function animate(timestamp){
-        if(!start) start=timestamp;
-        let progress=(timestamp-start)/duration;
-        if(progress<1){
-          spinAngle = finalAngle*easeOut(progress);
-          drawWheel();
-          requestAnimationFrame(animate);
-        } else {
-          spinning=false;
-          spinAngle=finalAngle%(2*Math.PI);
-          drawWheel();
-          alert("You won: "+winner.name);
-          if(winner.name!=="Try Again" && winner.qty>0) winner.qty--;
-          localStorage.setItem("mobicarePrizes",JSON.stringify(prizes));
-          document.getElementById("spinBtn").disabled=true;
-        }
-      }
-      requestAnimationFrame(animate);
-    }
-
-    function easeOut(t){ return 1-Math.pow(1-t,3); }
-
-    drawWheel();
-  </script>
-</body>
-</html>
-
-
+      // Arrow top (fixed) = 90deg = Math.PI/2
+      let arcCenter = (winnerIndex * arc) + arc/2;
+      le
