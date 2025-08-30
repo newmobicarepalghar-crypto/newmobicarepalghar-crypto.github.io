@@ -13,7 +13,7 @@
       border-bottom:40px solid red;
       position:absolute;
       top:20px; left:50%;
-      transform: translateX(-50%) rotate(180deg);
+      transform: translateX(-50%);
       z-index:10;
     }
     button { margin-top:20px; padding:10px 20px; font-size:16px; }
@@ -87,6 +87,36 @@
 
       let winnerIndex = prizes.findIndex(p=>p.name===winner.name);
 
-      // Arrow top (fixed) = 90deg = Math.PI/2
+      // Arrow is at top (0 rad = upward), so we need winner's arc center opposite
       let arcCenter = (winnerIndex * arc) + arc/2;
-      le
+
+      // Random full spins + correct stop angle
+      let spins = 5; // number of full rotations
+      let finalAngle = (2*Math.PI*spins) - arcCenter;
+
+      let duration = 6000; // spin time in ms
+      let start = null;
+
+      function animate(timestamp){
+        if(!start) start=timestamp;
+        let progress = (timestamp-start)/duration;
+        if(progress>=1){
+          spinAngle = finalAngle % (2*Math.PI);
+          drawWheel();
+          spinning=false;
+          alert("🎉 Winner: " + winner.name);
+          return;
+        }
+        let eased = 1 - Math.pow(1-progress,3); // easeOut
+        spinAngle = eased * finalAngle;
+        drawWheel();
+        requestAnimationFrame(animate);
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    drawWheel();
+  </script>
+</body>
+</html>
