@@ -2,126 +2,136 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mobicare Lucky Wheel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin & Win</title>
   <style>
-    body { text-align:center; font-family:Arial; background:#f9f9f9; }
-    #wheel { border:10px solid #333; border-radius:50%; margin:auto; display:block; }
-    /* Arrow always on TOP */
-    #arrow {
-      width:0; height:0;
-      border-left:20px solid transparent;
-      border-right:20px solid transparent;
-      border-top:40px solid red;  /* 🔺 pointing UP */
-      position:absolute;
-      top:0; left:50%;
-      transform: translateX(-50%);
-      z-index:10;
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 30px;
     }
-    button { margin-top:20px; padding:10px 20px; font-size:16px; }
+    #wheel {
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      border: 10px solid #333;
+      margin: 0 auto;
+      position: relative;
+      transition: transform 5s ease-out;
+    }
+    #arrow {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 40px solid red; /* Arrow downward */
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    #spin {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #adminPanel {
+      margin-top: 30px;
+      border: 2px solid #444;
+      display: inline-block;
+      padding: 15px;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
-  <h2>Spin & Win</h2>
-  <div id="arrow"></div>
-  <canvas id="wheel" width="400" height="400"></canvas>
-  <br>
-  <button onclick="spinWheel()" id="spinBtn">SPIN</button>
+  <h1>🎡 Spin & Win</h1>
+
+  <!-- Wheel -->
+  <div style="position: relative; width: 400px; margin: 0 auto;">
+    <div id="arrow"></div>
+    <canvas id="wheel" width="400" height="400"></canvas>
+  </div>
+  <button id="spin">SPIN</button>
+
+  <!-- Admin Panel -->
+  <div id="adminPanel">
+    <h3>🔑 Admin Control</h3>
+    <label>Select Fixed Prize: </label>
+    <select id="fixedPrize">
+      <option value="">Random</option>
+      <option value="Water Bottle">Water Bottle</option>
+      <option value="Tiffin Box">Tiffin Box</option>
+      <option value="Duffle Bag">Duffle Bag</option>
+      <option value="Sling Bag">Sling Bag</option>
+      <option value="Backpack">Backpack</option>
+      <option value="Try Again">Try Again</option>
+    </select>
+  </div>
 
   <script>
-    let canvas = document.getElementById("wheel");
-    let ctx = canvas.getContext("2d");
+    const wheelCanvas = document.getElementById("wheel");
+    const ctx = wheelCanvas.getContext("2d");
+
+    const segments = ["Water Bottle", "Tiffin Box", "Duffle Bag", "Sling Bag", "Backpack", "Try Again"];
+    const colors = ["#FF9999", "#FFCC99", "#9999FF", "#99CCCC", "#99FF99", "#FFCCFF"];
+    
+    let angle = 0;
     let spinning = false;
-    let spinAngle = 0;
-    let adminPrize = localStorage.getItem("adminPrize") || null;
 
-    let prizes = JSON.parse(localStorage.getItem("mobicarePrizes")) || [
-      {name:"Water Bottle", qty:200},
-      {name:"Backpack", qty:100},
-      {name:"Duffel Bag", qty:60},
-      {name:"Tiffin Box", qty:100},
-      {name:"Sling Bag", qty:100},
-      {name:"Try Again", qty:9999}
-    ];
-
-    let colors = ["#ff9999","#99ff99","#9999ff","#ffcc99","#66cccc","#ffccff"];
-
-    function drawWheel(){
-      ctx.clearRect(0,0,400,400);
-      let arc = 2*Math.PI/prizes.length;
-      prizes.forEach((p,i)=>{
-        let angle = i*arc + spinAngle;
+    // Draw Wheel
+    function drawWheel() {
+      const segAngle = (2 * Math.PI) / segments.length;
+      for (let i = 0; i < segments.length; i++) {
         ctx.beginPath();
-        ctx.fillStyle = colors[i%colors.length];
-        ctx.moveTo(200,200);
-        ctx.arc(200,200,200,angle,angle+arc);
-        ctx.lineTo(200,200);
+        ctx.moveTo(200, 200);
+        ctx.arc(200, 200, 200, i * segAngle, (i + 1) * segAngle);
+        ctx.fillStyle = colors[i];
         ctx.fill();
+        ctx.stroke();
 
+        // Text
         ctx.save();
-        ctx.translate(200,200);
-        ctx.rotate(angle + arc/2);
-        ctx.textAlign="right";
-        ctx.fillStyle="#000";
-        ctx.font="16px Arial";
-        ctx.fillText(p.name,180,5);
+        ctx.translate(200, 200);
+        ctx.rotate(i * segAngle + segAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "black";
+        ctx.font = "16px Arial";
+        ctx.fillText(segments[i], 180, 10);
         ctx.restore();
-      });
+      }
     }
-
-    function spinWheel(){
-      if(spinning) return;
-      spinning = true;
-      let arc = 2*Math.PI/prizes.length;
-
-      // Select prize
-      let winner;
-      if(adminPrize){
-        winner = prizes.find(p=>p.name===adminPrize);
-      } else {
-        winner = prizes[Math.floor(Math.random()*prizes.length)];
-      }
-
-      if(winner.qty<=0 && winner.name!=="Try Again"){
-        winner = prizes.find(p=>p.name==="Try Again");
-      }
-
-      let winnerIndex = prizes.findIndex(p=>p.name===winner.name);
-
-      // Target so Arrow (UP) points to winner
-      let targetAngle = (Math.PI/2) - (winnerIndex * arc + arc/2);
-      targetAngle = (targetAngle + 2*Math.PI) % (2*Math.PI);
-
-      // Spin at least 5 full rotations
-      let finalAngle = targetAngle + 2*Math.PI*5;
-
-      let duration = 8000; // 8 sec
-      let start = null;
-
-      function animate(ts){
-        if(!start) start = ts;
-        let progress = (ts - start) / duration;
-        if(progress > 1) progress = 1;
-
-        let eased = 1 - Math.pow(1 - progress, 3); // smooth stop
-        spinAngle = finalAngle * eased;
-        drawWheel();
-
-        if(progress < 1){
-          requestAnimationFrame(animate);
-        } else {
-          spinning = false;
-          alert("🎉 Winner: " + winner.name);
-          // reduce qty
-          if(winner.name!=="Try Again" && winner.qty>0){
-            winner.qty--;
-            localStorage.setItem("mobicarePrizes", JSON.stringify(prizes));
-          }
-        }
-      }
-      requestAnimationFrame(animate);
-    }
-
     drawWheel();
+
+    // Spin Button
+    document.getElementById("spin").addEventListener("click", () => {
+      if (spinning) return;
+      spinning = true;
+
+      const segAngle = 360 / segments.length;
+
+      // Admin Control Check
+      let fixedPrize = document.getElementById("fixedPrize").value;
+      let targetIndex;
+      
+      if (fixedPrize && segments.includes(fixedPrize)) {
+        targetIndex = segments.indexOf(fixedPrize); // Admin fixed
+      } else {
+        targetIndex = Math.floor(Math.random() * segments.length); // Random
+      }
+
+      // Calculate stop angle (arrow points at top center = 270°)
+      const stopAngle = 270 - (targetIndex * segAngle + segAngle / 2);
+
+      angle += 360 * 5 + stopAngle; // 5 rounds + stop
+      wheelCanvas.style.transform = `rotate(${angle}deg)`;
+
+      setTimeout(() => {
+        alert("🎉 You won: " + segments[targetIndex]);
+        spinning = false;
+      }, 5200);
+    });
   </script>
 </body>
 </html>
