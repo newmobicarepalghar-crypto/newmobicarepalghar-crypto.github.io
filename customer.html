@@ -86,9 +86,10 @@
       }
 
       let winnerIndex = prizes.findIndex(p=>p.name===winner.name);
-      let targetAngle = (prizes.length - winnerIndex)*arc - arc/2;
+      let targetAngle = winnerIndex * arc + arc / 2;
+targetAngle = 2 * Math.PI - targetAngle;
       let finalAngle = 5*2*Math.PI + targetAngle;
-      let duration=4000;
+      let duration=8000;
       let start=null;
 
       function animate(timestamp){
@@ -117,4 +118,5 @@
   </script>
 </body>
 </html>
+
 
